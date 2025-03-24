@@ -11,56 +11,95 @@ export default function InscriptionForm() {
   const [password, setPassword] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [role, setRole] = useState('élève')
+  const [role, setRole] = useState('tuteur')
   const [message, setMessage] = useState('')
 
-  const handleSignup = async () => {
-    setMessage('')
-    const { data, error } = await supabase.auth.signUp({
+  const handleSignup = async (e) => {
+    e.preventDefault()
+    setMessage('Inscription en cours...')
+
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password
     })
 
-    if (error) {
-      setMessage(`Erreur: ${error.message}`)
+    if (signUpError) {
+      setMessage(`Erreur : ${signUpError.message}`)
       return
     }
 
-    const user = data.user
+    const user = signUpData.user
+
     if (user) {
-      const { error: profileError } = await supabase.from('profiles').insert({
+      const { error: insertError } = await supabase.from('profiles').insert({
         id: user.id,
         first_name: firstName,
         last_name: lastName,
         role: role
       })
 
-      if (profileError) {
-        console.error('Erreur insertion profil:', profileError)
-        setMessage(`Erreur lors de l’insertion du profil : ${profileError.message}`)
+      if (insertError) {
+        setMessage(`Erreur lors de l’insertion du profil : ${insertError.message}`)
         return
       }
 
       setMessage('Inscription réussie! 🎉')
+    } else {
+      setMessage("Erreur : utilisateur non créé.")
     }
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
+    <form onSubmit={handleSignup} className="p-6 max-w-xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">Créer un compte</h2>
-      <div className="space-y-4 p-4 border rounded shadow">
-        <input placeholder="Prénom" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full p-2 border rounded" />
-        <input placeholder="Nom de famille" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full p-2 border rounded" />
-        <input placeholder="Courriel" type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" />
-        <input placeholder="Mot de passe" type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" />
-        <select value={role} onChange={e => setRole(e.target.value)} className="w-full p-2 border rounded">
-          <option value="élève">Élève</option>
-          <option value="parent">Parent</option>
-          <option value="tuteur">Tuteur</option>
-        </select>
-        <button onClick={handleSignup} className="w-full p-2 bg-blue-600 text-white rounded">S'inscrire</button>
-        {message && <p className="text-sm text-red-600 mt-2">{message}</p>}
-      </div>
-    </div>
+      <input
+        type="text"
+        placeholder="Prénom"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+        className="block w-full mb-2 p-2 border rounded"
+        required
+      />
+      <input
+        type="text"
+        placeholder="Nom de famille"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        className="block w-full mb-2 p-2 border rounded"
+        required
+      />
+      <input
+        type="email"
+        placeholder="Adresse courriel"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="block w-full mb-2 p-2 border rounded"
+        required
+      />
+      <input
+        type="password"
+        placeholder="Mot de passe"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="block w-full mb-4 p-2 border rounded"
+        required
+      />
+      <select
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        className="block w-full mb-4 p-2 border rounded"
+      >
+        <option value="tuteur">Tuteur</option>
+        <option value="eleve">Élève</option>
+        <option value="parent">Parent</option>
+      </select>
+      <button
+        type="submit"
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        S'inscrire
+      </button>
+      {message && <p className="mt-4 text-sm text-red-600">{message}</p>}
+    </form>
   )
 }
