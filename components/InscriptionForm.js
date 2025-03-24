@@ -28,12 +28,19 @@ export default function InscriptionForm() {
 
     const user = data.user
     if (user) {
-      await supabase.from('profiles').insert({
+      const { error: profileError } = await supabase.from('profiles').insert({
         id: user.id,
         first_name: firstName,
         last_name: lastName,
         role: role
       })
+
+      if (profileError) {
+        console.error('Erreur insertion profil:', profileError)
+        setMessage(`Erreur lors de l’insertion du profil : ${profileError.message}`)
+        return
+      }
+
       setMessage('Inscription réussie! 🎉')
     }
   }
@@ -52,7 +59,7 @@ export default function InscriptionForm() {
           <option value="tuteur">Tuteur</option>
         </select>
         <button onClick={handleSignup} className="w-full p-2 bg-blue-600 text-white rounded">S'inscrire</button>
-        {message && <p className="text-sm text-green-600 mt-2">{message}</p>}
+        {message && <p className="text-sm text-red-600 mt-2">{message}</p>}
       </div>
     </div>
   )
