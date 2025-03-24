@@ -11,6 +11,8 @@ export default function DashboardTuteur() {
   const [userId, setUserId] = useState('')
   const [message, setMessage] = useState('Chargement en cours...')
   const [profileDebug, setProfileDebug] = useState(null)
+  const [userDebug, setUserDebug] = useState(null)
+  const [profileError, setProfileError] = useState(null)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -19,8 +21,8 @@ export default function DashboardTuteur() {
         error: userError
       } = await supabase.auth.getUser()
 
-      console.log('Utilisateur actuel :', user)
-      if (userError) console.error('Erreur utilisateur :', userError)
+      setUserDebug(user)
+      if (userError) setProfileError(userError.message)
 
       if (user) {
         setUserId(user.id)
@@ -30,8 +32,7 @@ export default function DashboardTuteur() {
           .eq('id', user.id)
           .single()
 
-        console.log('Profil reçu:', profile)
-        if (error) console.error('Erreur de récupération du profil :', error)
+        if (error) setProfileError(error.message)
 
         if (error || !profile) {
           setMessage("Profil introuvable. Veuillez vérifier l'ID dans la table 'profiles'.")
@@ -57,10 +58,29 @@ export default function DashboardTuteur() {
       )}
       <p className="text-lg">Vous êtes connecté en tant que tuteur.</p>
 
+      {userDebug && (
+        <div className="mt-6">
+          <h3 className="font-bold">Debug utilisateur :</h3>
+          <pre className="bg-yellow-100 text-sm p-2 rounded">
+            {JSON.stringify(userDebug, null, 2)}
+          </pre>
+        </div>
+      )}
+
       {profileDebug && (
-        <pre className="mt-4 p-2 bg-gray-100 text-sm">
-          {JSON.stringify(profileDebug, null, 2)}
-        </pre>
+        <div className="mt-4">
+          <h3 className="font-bold">Debug profil :</h3>
+          <pre className="bg-green-100 text-sm p-2 rounded">
+            {JSON.stringify(profileDebug, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      {profileError && (
+        <div className="mt-4 text-red-600">
+          <h3 className="font-bold">Erreur :</h3>
+          <pre>{profileError}</pre>
+        </div>
       )}
     </div>
   )
