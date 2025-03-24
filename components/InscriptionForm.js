@@ -18,7 +18,7 @@ export default function InscriptionForm() {
     e.preventDefault()
     setMessage('Inscription en cours...')
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password
     })
@@ -28,25 +28,30 @@ export default function InscriptionForm() {
       return
     }
 
-    const user = signUpData.user
+    // On récupère l'utilisateur actif (plus fiable)
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser()
 
-    if (user) {
-      const { error: insertError } = await supabase.from('profiles').insert({
-        id: user.id,
-        first_name: firstName,
-        last_name: lastName,
-        role: role
-      })
-
-      if (insertError) {
-        setMessage(`Erreur lors de l’insertion du profil : ${insertError.message}`)
-        return
-      }
-
-      setMessage('Inscription réussie! 🎉')
-    } else {
-      setMessage("Erreur : utilisateur non créé.")
+    if (userError || !user) {
+      setMessage("Erreur lors de la récupération de l'utilisateur.")
+      return
     }
+
+    const { error: insertError } = await supabase.from('profiles').insert({
+      id: user.id,
+      first_name: firstName,
+      last_name: lastName,
+      role: role
+    })
+
+    if (insertError) {
+      setMessage(`Erreur lors de l’insertion du profil : ${insertError.message}`)
+      return
+    }
+
+    setMessage('Inscription réussie! 🎉')
   }
 
   return (
@@ -103,3 +108,4 @@ export default function InscriptionForm() {
     </form>
   )
 }
+
