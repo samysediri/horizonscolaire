@@ -30,12 +30,12 @@ export default function DashboardTuteur() {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (error) setProfileError(error.message)
 
-        if (error || !profile) {
-          setMessage("Profil introuvable. Veuillez vérifier l'ID dans la table 'profiles'.")
+        if (!profile) {
+          setMessage("Profil non trouvé. Vérifie la table 'profiles' pour l'ID suivant :")
         } else {
           setPrenom(profile.first_name)
           setProfileDebug(profile)
