@@ -29,7 +29,7 @@ export default function DashboardTuteur() {
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .ilike('id', `%${user.id}%`) // Remplace eq par ilike
           .single()
 
         if (error) setProfileError(error.message)
