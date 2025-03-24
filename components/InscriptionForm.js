@@ -15,8 +15,12 @@ export default function DashboardTuteur() {
   useEffect(() => {
     const fetchUser = async () => {
       const {
-        data: { user }
+        data: { user },
+        error: userError
       } = await supabase.auth.getUser()
+
+      console.log('Utilisateur actuel :', user)
+      if (userError) console.error('Erreur utilisateur :', userError)
 
       if (user) {
         setUserId(user.id)
@@ -27,6 +31,7 @@ export default function DashboardTuteur() {
           .single()
 
         console.log('Profil reçu:', profile)
+        if (error) console.error('Erreur de récupération du profil :', error)
 
         if (error || !profile) {
           setMessage("Profil introuvable. Veuillez vérifier l'ID dans la table 'profiles'.")
