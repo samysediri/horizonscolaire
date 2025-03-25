@@ -76,7 +76,12 @@ export default function DashboardTuteur() {
     ])
 
     if (error) {
-      setFormError('Erreur : ' + JSON.stringify(error, null, 2))
+      console.error('Erreur complète Supabase :', error)
+      if (Object.keys(error).length === 0) {
+        setFormError('Erreur inconnue — l’objet error est vide. Vérifie la console.')
+      } else {
+        setFormError('Erreur : ' + JSON.stringify(error, null, 2))
+      }
     } else {
       setFormError('')
       alert('Séance ajoutée!')
