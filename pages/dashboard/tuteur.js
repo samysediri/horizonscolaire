@@ -110,10 +110,7 @@ export default function DashboardTuteur() {
         <button type="submit" className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Ajouter la séance</button>
       </form>
 
-      <h3 className="text-lg font-semibold mb-2">Séances prévues :</h3>
-
-      <pre className="text-xs text-gray-500 bg-gray-100 p-2 rounded mb-4">Séances récupérées (brut) :
-{JSON.stringify(seances, null, 2)}</pre>
+      <h3 className="text-lg font-semibold mb-4">Séances prévues :</h3>
 
       {seances && seances.length > 0 ? (
         <table className="w-full table-auto border rounded shadow text-sm">
@@ -134,7 +131,7 @@ export default function DashboardTuteur() {
                 <td className="p-2 border">{s.heure}</td>
                 <td className="p-2 border">{s.duree} min</td>
                 <td className="p-2 border">
-                  <a href={s.lien_lessonspace} target="_blank" className="text-blue-600 hover:underline">Accéder</a>
+                  <a href={s.lien_lessonspace} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Accéder</a>
                 </td>
               </tr>
             ))}
