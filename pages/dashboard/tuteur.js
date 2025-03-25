@@ -18,6 +18,7 @@ export default function DashboardTuteur() {
   const [message, setMessage] = useState('Chargement en cours...')
   const [seances, setSeances] = useState([])
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
+  const [newSeance, setNewSeance] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
 
   useEffect(() => {
     const fetchUserAndSeances = async () => {
@@ -96,13 +97,8 @@ export default function DashboardTuteur() {
     fetchUserAndSeances()
   }, [currentWeekStart])
 
-  const nextWeek = () => {
-    setCurrentWeekStart(addDays(currentWeekStart, 7))
-  }
-
-  const prevWeek = () => {
-    setCurrentWeekStart(addDays(currentWeekStart, -7))
-  }
+  const nextWeek = () => setCurrentWeekStart(addDays(currentWeekStart, 7))
+  const prevWeek = () => setCurrentWeekStart(addDays(currentWeekStart, -7))
 
   const handleCompleter = async (seanceId) => {
     const duree = prompt("Entrez la durée réelle de la séance (en minutes) :")
@@ -121,9 +117,22 @@ export default function DashboardTuteur() {
     }
   }
 
+  const handleAddSeance = async () => {
+    if (!newSeance.eleve_nom || !newSeance.date || !newSeance.heure || !newSeance.duree) {
+      alert("Veuillez remplir tous les champs.")
+      return
+    }
+    const { error } = await supabase.from('seances').insert([{ ...newSeance, tuteur_id: userId }])
+    if (error) {
+      alert("Erreur lors de la création de la séance")
+    } else {
+      alert("Séance ajoutée!")
+      window.location.reload()
+    }
+  }
+
   const renderSchedule = () => {
     const days = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i))
-
     return (
       <div>
         <div className="flex justify-between mb-4">
@@ -158,9 +167,19 @@ export default function DashboardTuteur() {
       <h2 className="text-2xl font-bold mb-4">
         {prenom ? `Bienvenue, ${prenom}!` : message}
       </h2>
+      <div className="mb-6">
+        <h3 className="font-semibold text-lg mb-2">Ajouter une séance</h3>
+        <div className="grid grid-cols-5 gap-2 mb-2">
+          <input type="text" placeholder="Élève" className="border p-1" onChange={e => setNewSeance({ ...newSeance, eleve_nom: e.target.value })} />
+          <input type="date" className="border p-1" onChange={e => setNewSeance({ ...newSeance, date: e.target.value })} />
+          <input type="time" className="border p-1" onChange={e => setNewSeance({ ...newSeance, heure: e.target.value })} />
+          <input type="number" placeholder="Durée" className="border p-1" onChange={e => setNewSeance({ ...newSeance, duree: e.target.value })} />
+          <input type="text" placeholder="Lien Lessonspace" className="border p-1" onChange={e => setNewSeance({ ...newSeance, lien_lessonspace: e.target.value })} />
+        </div>
+        <button onClick={handleAddSeance} className="bg-green-500 text-white px-3 py-1 rounded">Ajouter</button>
+      </div>
       <p className="text-lg mb-6">Voici votre horaire hebdomadaire :</p>
       {renderSchedule()}
     </div>
   )
 }
-
