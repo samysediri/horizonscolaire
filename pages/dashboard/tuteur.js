@@ -7,6 +7,9 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZia2d2bXlucGlwcmRlcnpidWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4Mzk2MDAsImV4cCI6MjA1ODQxNTYwMH0.AR2R5f-VFxE0RwHZDQyUuVB3hmcSZBPu8AxkxC1beg0'
 )
 
+const LESSONSPACE_API_KEY = 'cdee0709-2ffe-4758-a0b9-25f92f91c0a7'
+const LESSONSPACE_API_URL = 'https://api.thelessonspace.com/v2/recordings/'
+
 export default function DashboardTuteur() {
   const [prenom, setPrenom] = useState('')
   const [userId, setUserId] = useState('')
@@ -56,14 +59,34 @@ export default function DashboardTuteur() {
         if (seanceError) {
           setMessage("Erreur lors du chargement des séances : " + seanceError.message)
         } else {
-          // Ajout automatique du lien d'enregistrement si le lien lessonspace existe et lien_revoir est vide
-          const updatedSeances = seanceData.map(s => {
-            if (!s.lien_revoir && s.lien_lessonspace) {
-              const possibleRecordingLink = s.lien_lessonspace + '/recording'
-              return { ...s, lien_revoir: possibleRecordingLink }
-            }
-            return s
-          })
+          const updatedSeances = await Promise.all(
+            seanceData.map(async (s) => {
+              if (!s.lien_revoir && s.lien_lessonspace) {
+                const spaceId = s.lien_lessonspace.split('/').pop()
+                try {
+                  const response = await fetch(`${LESSONSPACE_API_URL}${spaceId}`, {
+                    headers: {
+                      Authorization: `Bearer ${LESSONSPACE_API_KEY}`
+                    }
+                  })
+                  const json = await response.json()
+                  const lienRevoir = json.recording_url || null
+
+                  if (lienRevoir) {
+                    await supabase
+                      .from('seances')
+                      .update({ lien_revoir: lienRevoir })
+                      .eq('id', s.id)
+                    return { ...s, lien_revoir: lienRevoir }
+                  }
+                } catch (error) {
+                  console.error('Erreur lors de la récupération de l’enregistrement :', error)
+                }
+              }
+              return s
+            })
+          )
+
           setSeances(updatedSeances)
         }
       }
