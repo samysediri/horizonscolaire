@@ -12,6 +12,7 @@ export default function DashboardTuteur() {
   const [message, setMessage] = useState('Chargement en cours...')
   const [seances, setSeances] = useState([])
   const [form, setForm] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
+  const [formError, setFormError] = useState('')
 
   useEffect(() => {
     const fetchUserAndSeances = async () => {
@@ -63,18 +64,21 @@ export default function DashboardTuteur() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setFormError('')
     if (!userId) return
 
     const { error } = await supabase.from('seances').insert([
       {
         ...form,
+        duree: parseInt(form.duree),
         tuteur_id: userId
       }
     ])
 
     if (error) {
-      alert('Erreur lors de la création de la séance : ' + error.message)
+      setFormError('Erreur : ' + error.message)
     } else {
+      setFormError('')
       alert('Séance ajoutée!')
       setForm({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
       location.reload()
@@ -87,6 +91,8 @@ export default function DashboardTuteur() {
         {prenom ? `Bienvenue, ${prenom}!` : message}
       </h2>
       <p className="text-lg mb-6">Voici votre horaire de tutorat :</p>
+
+      {formError && <div className="mb-4 text-red-600 font-semibold">{formError}</div>}
 
       <form onSubmit={handleSubmit} className="mb-6 space-y-4 bg-gray-50 p-4 rounded-lg">
         <div className="grid grid-cols-2 gap-4">
