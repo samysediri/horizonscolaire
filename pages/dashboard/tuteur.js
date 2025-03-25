@@ -48,8 +48,6 @@ export default function DashboardTuteur() {
           .eq('tuteur_id', user.id)
           .order('date', { ascending: true })
 
-        console.log("Séances récupérées :", seanceData)
-
         if (seanceError) {
           setMessage("Erreur lors du chargement des séances : " + seanceError.message)
         } else {
@@ -93,7 +91,7 @@ export default function DashboardTuteur() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">
         {prenom ? `Bienvenue, ${prenom}!` : message}
       </h2>
@@ -112,10 +110,36 @@ export default function DashboardTuteur() {
         <button type="submit" className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Ajouter la séance</button>
       </form>
 
-      <h3 className="text-lg font-semibold mb-2">Séances récupérées (brut) :</h3>
-      <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
-        {JSON.stringify(seances, null, 2)}
-      </pre>
+      <h3 className="text-lg font-semibold mb-2">Séances prévues :</h3>
+
+      {seances && seances.length > 0 ? (
+        <table className="w-full table-auto border rounded shadow text-sm">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="p-2 border">Élève</th>
+              <th className="p-2 border">Date</th>
+              <th className="p-2 border">Heure</th>
+              <th className="p-2 border">Durée</th>
+              <th className="p-2 border">Accès</th>
+            </tr>
+          </thead>
+          <tbody>
+            {seances.map((s, i) => (
+              <tr key={i} className="text-center">
+                <td className="p-2 border">{s.eleve_nom}</td>
+                <td className="p-2 border">{s.date}</td>
+                <td className="p-2 border">{s.heure}</td>
+                <td className="p-2 border">{s.duree} min</td>
+                <td className="p-2 border">
+                  <a href={s.lien_lessonspace} target="_blank" className="text-blue-600 hover:underline">Accéder</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-gray-500">Aucune séance prévue.</p>
+      )}
     </div>
   )
 }
