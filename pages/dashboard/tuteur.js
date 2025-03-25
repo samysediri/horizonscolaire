@@ -10,78 +10,99 @@ export default function DashboardTuteur() {
   const [prenom, setPrenom] = useState('')
   const [userId, setUserId] = useState('')
   const [message, setMessage] = useState('Chargement en cours...')
-  const [profileDebug, setProfileDebug] = useState(null)
-  const [userDebug, setUserDebug] = useState(null)
-  const [profileError, setProfileError] = useState(null)
+  const [seances, setSeances] = useState([])
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndSeances = async () => {
       const {
         data: { user },
         error: userError
       } = await supabase.auth.getUser()
 
-      setUserDebug(user)
-      if (userError) setProfileError(userError.message)
+      if (userError) {
+        setMessage(userError.message)
+        return
+      }
 
       if (user) {
         setUserId(user.id)
-        const { data: profile, error } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .maybeSingle()
 
-        if (error) setProfileError(error.message)
-
-        if (!profile) {
+        if (!profile || profileError) {
           setMessage("Profil non trouvé. Vérifie la table 'profiles' pour l'ID suivant :")
-        } else {
-          setPrenom(profile.first_name)
-          setProfileDebug(profile)
-          setMessage('')
+          return
         }
-      } else {
-        setMessage("Utilisateur non connecté.")
+
+        setPrenom(profile.first_name)
+        setMessage('')
+
+        // Charger les séances associées au tuteur
+        const { data: seanceData, error: seanceError } = await supabase
+          .from('seances')
+          .select('*')
+          .eq('tuteur_id', user.id)
+          .order('date', { ascending: true })
+
+        if (seanceError) {
+          setMessage("Erreur lors du chargement des séances : " + seanceError.message)
+        } else {
+          setSeances(seanceData)
+        }
       }
     }
-    fetchUser()
+    fetchUserAndSeances()
   }, [])
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">
         {prenom ? `Bienvenue, ${prenom}!` : message}
       </h2>
-      {userId && (
-        <p className="text-sm text-gray-500 mb-4">ID utilisateur : {userId}</p>
-      )}
-      <p className="text-lg">Vous êtes connecté en tant que tuteur.</p>
+      <p className="text-lg mb-6">Voici votre horaire de tutorat :</p>
 
-      {userDebug && (
-        <div className="mt-6">
-          <h3 className="font-bold">Debug utilisateur :</h3>
-          <pre className="bg-yellow-100 text-sm p-2 rounded">
-            {JSON.stringify(userDebug, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {profileDebug && (
-        <div className="mt-4">
-          <h3 className="font-bold">Debug profil :</h3>
-          <pre className="bg-green-100 text-sm p-2 rounded">
-            {JSON.stringify(profileDebug, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {profileError && (
-        <div className="mt-4 text-red-600">
-          <h3 className="font-bold">Erreur :</h3>
-          <pre>{profileError}</pre>
-        </div>
-      )}
+      <table className="w-full text-sm border">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="border p-2">Élève</th>
+            <th className="border p-2">Date</th>
+            <th className="border p-2">Heure</th>
+            <th className="border p-2">Durée</th>
+            <th className="border p-2">Lien</th>
+          </tr>
+        </thead>
+        <tbody>
+          {seances.length > 0 ? (
+            seances.map((s) => (
+              <tr key={s.id} className="border-t">
+                <td className="p-2">{s.eleve_nom}</td>
+                <td className="p-2">{new Date(s.date).toLocaleDateString()}</td>
+                <td className="p-2">{s.heure}</td>
+                <td className="p-2">{s.duree} min</td>
+                <td className="p-2">
+                  <a
+                    href={s.lien_lessonspace}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    Accéder
+                  </a>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" className="text-center p-4 text-gray-500">
+                Aucune séance prévue.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   )
 }
