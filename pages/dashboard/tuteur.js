@@ -65,7 +65,7 @@ export default function DashboardTuteur() {
           const updatedSeances = await Promise.all(
             seanceData.map(async (s) => {
               if (!s.lien_revoir && s.lien_lessonspace) {
-                const spaceId = s.lien_lessonspace.split('/').pop()
+                const spaceId = s.lien_lessonspace.split('/').pop().split('?')[0]
                 try {
                   const response = await fetch(`${LESSONSPACE_API_URL}${spaceId}`, {
                     headers: {
@@ -76,11 +76,14 @@ export default function DashboardTuteur() {
                   const lienRevoir = json.recording_url || null
 
                   if (lienRevoir) {
-                    await supabase
+                    const { error } = await supabase
                       .from('seances')
                       .update({ lien_revoir: lienRevoir })
                       .eq('id', s.id)
-                    return { ...s, lien_revoir: lienRevoir }
+
+                    if (!error) {
+                      return { ...s, lien_revoir: lienRevoir }
+                    }
                   }
                 } catch (error) {
                   console.error('Erreur lors de la récupération de l’enregistrement :', error)
@@ -183,3 +186,4 @@ export default function DashboardTuteur() {
     </div>
   )
 }
+
