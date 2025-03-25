@@ -42,12 +42,15 @@ export default function DashboardTuteur() {
         setPrenom(profile.first_name)
         setMessage('')
 
-        const today = new Date().toISOString().split('T')[0]
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const isoDate = today.toISOString()
+
         const { data: seanceData, error: seanceError } = await supabase
           .from('seances')
           .select('*')
           .eq('tuteur_id', user.id)
-          .gte('date', today)
+          .gte('date', isoDate)
           .order('date', { ascending: true })
 
         if (seanceError) {
