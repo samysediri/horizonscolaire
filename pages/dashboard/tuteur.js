@@ -112,51 +112,10 @@ export default function DashboardTuteur() {
         <button type="submit" className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Ajouter la séance</button>
       </form>
 
-      <table className="w-full text-sm border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Élève</th>
-            <th className="border p-2">Date</th>
-            <th className="border p-2">Heure</th>
-            <th className="border p-2">Durée</th>
-            <th className="border p-2">Lien</th>
-          </tr>
-        </thead>
-        <tbody>
-          {seances === null ? (
-            <tr>
-              <td colSpan="5" className="text-center p-4 text-gray-500">
-                Chargement des séances...
-              </td>
-            </tr>
-          ) : seances.length > 0 ? (
-            seances.map((s) => (
-              <tr key={s.id} className="border-t">
-                <td className="p-2">{s.eleve_nom}</td>
-                <td className="p-2">{new Date(s.date).toLocaleDateString()}</td>
-                <td className="p-2">{s.heure}</td>
-                <td className="p-2">{s.duree} min</td>
-                <td className="p-2">
-                  <a
-                    href={s.lien_lessonspace}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline"
-                  >
-                    Accéder
-                  </a>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="5" className="text-center p-4 text-gray-500">
-                Aucune séance prévue.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <h3 className="text-lg font-semibold mb-2">Séances récupérées (brut) :</h3>
+      <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+        {JSON.stringify(seances, null, 2)}
+      </pre>
     </div>
   )
 }
