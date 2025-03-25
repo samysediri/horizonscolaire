@@ -10,7 +10,7 @@ export default function DashboardTuteur() {
   const [prenom, setPrenom] = useState('')
   const [userId, setUserId] = useState('')
   const [message, setMessage] = useState('Chargement en cours...')
-  const [seances, setSeances] = useState([])
+  const [seances, setSeances] = useState(null)
   const [form, setForm] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
   const [formError, setFormError] = useState('')
 
@@ -47,6 +47,8 @@ export default function DashboardTuteur() {
           .select('*')
           .eq('tuteur_id', user.id)
           .order('date', { ascending: true })
+
+        console.log("Séances récupérées :", seanceData)
 
         if (seanceError) {
           setMessage("Erreur lors du chargement des séances : " + seanceError.message)
@@ -121,7 +123,13 @@ export default function DashboardTuteur() {
           </tr>
         </thead>
         <tbody>
-          {seances.length > 0 ? (
+          {seances === null ? (
+            <tr>
+              <td colSpan="5" className="text-center p-4 text-gray-500">
+                Chargement des séances...
+              </td>
+            </tr>
+          ) : seances.length > 0 ? (
             seances.map((s) => (
               <tr key={s.id} className="border-t">
                 <td className="p-2">{s.eleve_nom}</td>
@@ -152,4 +160,3 @@ export default function DashboardTuteur() {
     </div>
   )
 }
-
