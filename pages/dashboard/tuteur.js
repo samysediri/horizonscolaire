@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { startOfWeek, endOfWeek, addDays, format } from 'date-fns'
 
 const supabase = createClient(
   'https://fbkgvmynpiprderzbuld.supabase.co',
@@ -10,9 +11,8 @@ export default function DashboardTuteur() {
   const [prenom, setPrenom] = useState('')
   const [userId, setUserId] = useState('')
   const [message, setMessage] = useState('Chargement en cours...')
-  const [seances, setSeances] = useState(null)
-  const [form, setForm] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
-  const [formError, setFormError] = useState('')
+  const [seances, setSeances] = useState([])
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
 
   useEffect(() => {
     const fetchUserAndSeances = async () => {
@@ -42,10 +42,15 @@ export default function DashboardTuteur() {
         setPrenom(profile.first_name)
         setMessage('')
 
+        const weekStart = format(currentWeekStart, 'yyyy-MM-dd')
+        const weekEnd = format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+
         const { data: seanceData, error: seanceError } = await supabase
           .from('seances')
           .select('*')
           .eq('tuteur_id', user.id)
+          .gte('date', weekStart)
+          .lte('date', weekEnd)
           .order('date', { ascending: true })
 
         if (seanceError) {
@@ -56,90 +61,75 @@ export default function DashboardTuteur() {
       }
     }
     fetchUserAndSeances()
-  }, [])
+  }, [currentWeekStart])
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const nextWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, 7))
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setFormError('')
-    if (!userId) return
+  const prevWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, -7))
+  }
 
-    const { error } = await supabase.from('seances').insert([
-      {
-        ...form,
-        duree: parseInt(form.duree),
-        tuteur_id: userId
-      }
-    ])
+  const handleCompleter = async (seanceId) => {
+    const duree = prompt("Entrez la durée réelle de la séance (en minutes) :")
+    if (!duree) return
+
+    const lienRevoir = prompt("Entrez le lien vers l'enregistrement Lessonspace :")
+    if (!lienRevoir) return
+
+    const { error } = await supabase
+      .from('seances')
+      .update({ duree_reelle: parseInt(duree), lien_revoir: lienRevoir })
+      .eq('id', seanceId)
 
     if (error) {
-      console.error('Erreur complète Supabase :', error)
-      if (Object.keys(error).length === 0) {
-        setFormError('Erreur inconnue — l’objet error est vide. Vérifie la console.')
-      } else {
-        setFormError('Erreur : ' + JSON.stringify(error, null, 2))
-      }
+      alert("Erreur lors de la mise à jour de la séance")
     } else {
-      setFormError('')
-      alert('Séance ajoutée!')
-      setForm({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
-      location.reload()
+      alert("Séance complétée avec succès!")
+      window.location.reload()
     }
   }
 
+  const renderSchedule = () => {
+    const days = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i))
+
+    return (
+      <div>
+        <div className="flex justify-between mb-4">
+          <button onClick={prevWeek} className="px-3 py-1 bg-gray-200 rounded">← Semaine précédente</button>
+          <h3 className="text-lg font-semibold">Semaine du {format(currentWeekStart, 'dd MMM yyyy')}</h3>
+          <button onClick={nextWeek} className="px-3 py-1 bg-gray-200 rounded">Semaine suivante →</button>
+        </div>
+        <div className="grid grid-cols-7 gap-2">
+          {days.map(day => (
+            <div key={day} className="border p-2 h-64 overflow-y-auto">
+              <h4 className="font-bold text-sm mb-2">{format(day, 'EEEE dd')}</h4>
+              {seances.filter(s => s.date === format(day, 'yyyy-MM-dd')).map((s, i) => (
+                <div key={i} className="bg-blue-100 rounded p-2 mb-2">
+                  <p className="font-medium">{s.eleve_nom}</p>
+                  <p>{s.heure} - {s.duree} min</p>
+                  <div className="mt-1 space-x-2">
+                    <a href={s.lien_lessonspace} target="_blank" className="text-blue-600 text-sm underline">Accéder</a>
+                    <button onClick={() => handleCompleter(s.id)} className="text-green-600 text-sm underline">Compléter</button>
+                    {s.lien_revoir && <a href={s.lien_revoir} target="_blank" className="text-purple-600 text-sm underline">Revoir</a>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">
         {prenom ? `Bienvenue, ${prenom}!` : message}
       </h2>
-      <p className="text-lg mb-6">Voici votre horaire de tutorat :</p>
-
-      {formError && <pre className="mb-4 text-red-600 font-semibold whitespace-pre-wrap">{formError}</pre>}
-
-      <form onSubmit={handleSubmit} className="mb-6 space-y-4 bg-gray-50 p-4 rounded-lg">
-        <div className="grid grid-cols-2 gap-4">
-          <input name="eleve_nom" value={form.eleve_nom} onChange={handleChange} placeholder="Nom de l'élève" required className="p-2 border rounded" />
-          <input name="date" type="date" value={form.date} onChange={handleChange} required className="p-2 border rounded" />
-          <input name="heure" value={form.heure} onChange={handleChange} placeholder="Heure (ex: 16:00)" required className="p-2 border rounded" />
-          <input name="duree" value={form.duree} onChange={handleChange} placeholder="Durée (en minutes)" required className="p-2 border rounded" />
-          <input name="lien_lessonspace" value={form.lien_lessonspace} onChange={handleChange} placeholder="Lien Lessonspace" required className="p-2 border rounded col-span-2" />
-        </div>
-        <button type="submit" className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Ajouter la séance</button>
-      </form>
-
-      <h3 className="text-lg font-semibold mb-4">Séances prévues :</h3>
-
-      {seances && seances.length > 0 ? (
-        <table className="w-full table-auto border rounded shadow text-sm">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-2 border">Élève</th>
-              <th className="p-2 border">Date</th>
-              <th className="p-2 border">Heure</th>
-              <th className="p-2 border">Durée</th>
-              <th className="p-2 border">Accès</th>
-            </tr>
-          </thead>
-          <tbody>
-            {seances.map((s, i) => (
-              <tr key={i} className="text-center">
-                <td className="p-2 border">{s.eleve_nom}</td>
-                <td className="p-2 border">{s.date}</td>
-                <td className="p-2 border">{s.heure}</td>
-                <td className="p-2 border">{s.duree} min</td>
-                <td className="p-2 border">
-                  <a href={s.lien_lessonspace} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Accéder</a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p className="text-gray-500">Aucune séance prévue.</p>
-      )}
+      <p className="text-lg mb-6">Voici votre horaire hebdomadaire :</p>
+      {renderSchedule()}
     </div>
   )
 }
