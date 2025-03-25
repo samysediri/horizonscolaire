@@ -112,6 +112,9 @@ export default function DashboardTuteur() {
 
       <h3 className="text-lg font-semibold mb-2">Séances prévues :</h3>
 
+      <pre className="text-xs text-gray-500 bg-gray-100 p-2 rounded mb-4">Séances récupérées (brut) :
+{JSON.stringify(seances, null, 2)}</pre>
+
       {seances && seances.length > 0 ? (
         <table className="w-full table-auto border rounded shadow text-sm">
           <thead>
