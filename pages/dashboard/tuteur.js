@@ -11,6 +11,7 @@ export default function DashboardTuteur() {
   const [userId, setUserId] = useState('')
   const [message, setMessage] = useState('Chargement en cours...')
   const [seances, setSeances] = useState([])
+  const [form, setForm] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
 
   useEffect(() => {
     const fetchUserAndSeances = async () => {
@@ -40,7 +41,6 @@ export default function DashboardTuteur() {
         setPrenom(profile.first_name)
         setMessage('')
 
-        // Charger les séances associées au tuteur
         const { data: seanceData, error: seanceError } = await supabase
           .from('seances')
           .select('*')
@@ -57,12 +57,47 @@ export default function DashboardTuteur() {
     fetchUserAndSeances()
   }, [])
 
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!userId) return
+
+    const { error } = await supabase.from('seances').insert([
+      {
+        ...form,
+        tuteur_id: userId
+      }
+    ])
+
+    if (error) {
+      alert('Erreur lors de la création de la séance : ' + error.message)
+    } else {
+      alert('Séance ajoutée!')
+      setForm({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
+      location.reload()
+    }
+  }
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">
         {prenom ? `Bienvenue, ${prenom}!` : message}
       </h2>
       <p className="text-lg mb-6">Voici votre horaire de tutorat :</p>
+
+      <form onSubmit={handleSubmit} className="mb-6 space-y-4 bg-gray-50 p-4 rounded-lg">
+        <div className="grid grid-cols-2 gap-4">
+          <input name="eleve_nom" value={form.eleve_nom} onChange={handleChange} placeholder="Nom de l'élève" required className="p-2 border rounded" />
+          <input name="date" type="date" value={form.date} onChange={handleChange} required className="p-2 border rounded" />
+          <input name="heure" value={form.heure} onChange={handleChange} placeholder="Heure (ex: 16:00)" required className="p-2 border rounded" />
+          <input name="duree" value={form.duree} onChange={handleChange} placeholder="Durée (en minutes)" required className="p-2 border rounded" />
+          <input name="lien_lessonspace" value={form.lien_lessonspace} onChange={handleChange} placeholder="Lien Lessonspace" required className="p-2 border rounded col-span-2" />
+        </div>
+        <button type="submit" className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Ajouter la séance</button>
+      </form>
 
       <table className="w-full text-sm border">
         <thead>
