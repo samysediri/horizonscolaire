@@ -135,23 +135,23 @@ export default function DashboardTuteur() {
     const days = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i))
     return (
       <div>
-        <div className="flex justify-between mb-4">
-          <button onClick={prevWeek} className="px-3 py-1 bg-gray-200 rounded">← Semaine précédente</button>
-          <h3 className="text-lg font-semibold">Semaine du {format(currentWeekStart, 'dd MMM yyyy')}</h3>
-          <button onClick={nextWeek} className="px-3 py-1 bg-gray-200 rounded">Semaine suivante →</button>
+        <div className="flex justify-between items-center mb-6">
+          <button onClick={prevWeek} className="px-4 py-2 bg-blue-200 hover:bg-blue-300 rounded shadow">← Semaine précédente</button>
+          <h3 className="text-xl font-bold">Semaine du {format(currentWeekStart, 'dd MMM yyyy')}</h3>
+          <button onClick={nextWeek} className="px-4 py-2 bg-blue-200 hover:bg-blue-300 rounded shadow">Semaine suivante →</button>
         </div>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-4 border-t pt-4">
           {days.map(day => (
-            <div key={day} className="border p-2 h-64 overflow-y-auto">
-              <h4 className="font-bold text-sm mb-2">{format(day, 'EEEE dd')}</h4>
+            <div key={day} className="bg-white rounded-lg shadow p-3">
+              <h4 className="font-semibold text-center text-sm border-b pb-2 mb-2">{format(day, 'EEEE dd')}</h4>
               {seances.filter(s => s.date === format(day, 'yyyy-MM-dd')).map((s, i) => (
-                <div key={i} className="bg-blue-100 rounded p-2 mb-2">
-                  <p className="font-medium">{s.eleve_nom}</p>
-                  <p>{s.heure} - {s.duree} min</p>
-                  <div className="mt-1 space-x-2">
-                    <a href={s.lien_lessonspace} target="_blank" className="text-blue-600 text-sm underline">Accéder</a>
-                    <button onClick={() => handleCompleter(s.id)} className="text-green-600 text-sm underline">Compléter</button>
-                    {s.lien_revoir && <a href={s.lien_revoir} target="_blank" className="text-purple-600 text-sm underline">Revoir</a>}
+                <div key={i} className="bg-blue-50 border border-blue-200 rounded p-2 mb-2">
+                  <p className="font-medium text-blue-800">{s.eleve_nom}</p>
+                  <p className="text-sm text-gray-600">{s.heure} • {s.duree} min</p>
+                  <div className="flex flex-col gap-1 mt-2">
+                    <a href={s.lien_lessonspace} target="_blank" className="text-sm text-blue-600 hover:underline">Accéder</a>
+                    <button onClick={() => handleCompleter(s.id)} className="text-sm text-green-600 hover:underline">Compléter</button>
+                    {s.lien_revoir && <a href={s.lien_revoir} target="_blank" className="text-sm text-purple-600 hover:underline">Revoir</a>}
                   </div>
                 </div>
               ))}
@@ -164,21 +164,21 @@ export default function DashboardTuteur() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">
+      <h2 className="text-3xl font-extrabold mb-6 text-gray-800">
         {prenom ? `Bienvenue, ${prenom}!` : message}
       </h2>
-      <div className="mb-6">
-        <h3 className="font-semibold text-lg mb-2">Ajouter une séance</h3>
-        <div className="grid grid-cols-5 gap-2 mb-2">
-          <input type="text" placeholder="Élève" className="border p-1" onChange={e => setNewSeance({ ...newSeance, eleve_nom: e.target.value })} />
-          <input type="date" className="border p-1" onChange={e => setNewSeance({ ...newSeance, date: e.target.value })} />
-          <input type="time" className="border p-1" onChange={e => setNewSeance({ ...newSeance, heure: e.target.value })} />
-          <input type="number" placeholder="Durée" className="border p-1" onChange={e => setNewSeance({ ...newSeance, duree: e.target.value })} />
-          <input type="text" placeholder="Lien Lessonspace" className="border p-1" onChange={e => setNewSeance({ ...newSeance, lien_lessonspace: e.target.value })} />
+      <div className="mb-8 bg-white shadow p-4 rounded-lg">
+        <h3 className="text-xl font-semibold mb-4">Ajouter une séance</h3>
+        <div className="grid grid-cols-5 gap-3 mb-3">
+          <input type="text" placeholder="Élève" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, eleve_nom: e.target.value })} />
+          <input type="date" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, date: e.target.value })} />
+          <input type="time" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, heure: e.target.value })} />
+          <input type="number" placeholder="Durée" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, duree: e.target.value })} />
+          <input type="text" placeholder="Lien Lessonspace" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, lien_lessonspace: e.target.value })} />
         </div>
-        <button onClick={handleAddSeance} className="bg-green-500 text-white px-3 py-1 rounded">Ajouter</button>
+        <button onClick={handleAddSeance} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Ajouter la séance</button>
       </div>
-      <p className="text-lg mb-6">Voici votre horaire hebdomadaire :</p>
+      <p className="text-xl font-medium mb-4">Votre horaire hebdomadaire</p>
       {renderSchedule()}
     </div>
   )
