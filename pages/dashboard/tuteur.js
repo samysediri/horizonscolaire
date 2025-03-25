@@ -56,7 +56,15 @@ export default function DashboardTuteur() {
         if (seanceError) {
           setMessage("Erreur lors du chargement des séances : " + seanceError.message)
         } else {
-          setSeances(seanceData)
+          // Ajout automatique du lien d'enregistrement si le lien lessonspace existe et lien_revoir est vide
+          const updatedSeances = seanceData.map(s => {
+            if (!s.lien_revoir && s.lien_lessonspace) {
+              const possibleRecordingLink = s.lien_lessonspace + '/recording'
+              return { ...s, lien_revoir: possibleRecordingLink }
+            }
+            return s
+          })
+          setSeances(updatedSeances)
         }
       }
     }
@@ -75,12 +83,9 @@ export default function DashboardTuteur() {
     const duree = prompt("Entrez la durée réelle de la séance (en minutes) :")
     if (!duree) return
 
-    const lienRevoir = prompt("Entrez le lien vers l'enregistrement Lessonspace :")
-    if (!lienRevoir) return
-
     const { error } = await supabase
       .from('seances')
-      .update({ duree_reelle: parseInt(duree), lien_revoir: lienRevoir })
+      .update({ duree_reelle: parseInt(duree) })
       .eq('id', seanceId)
 
     if (error) {
