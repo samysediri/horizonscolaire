@@ -70,7 +70,7 @@ export default function DashboardTuteur() {
                     }
                   })
                   const json = await response.json()
-                  console.log('Réponse API Lessonspace :', json) // Ajout du log ici
+                  alert("Réponse Lessonspace:\n" + JSON.stringify(json, null, 2)) // Affichage du retour API
                   const lienRevoir = json.recording_url || null
 
                   if (lienRevoir) {
