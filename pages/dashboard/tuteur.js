@@ -76,7 +76,7 @@ export default function DashboardTuteur() {
     ])
 
     if (error) {
-      setFormError('Erreur : ' + error.message)
+      setFormError('Erreur : ' + JSON.stringify(error, null, 2))
     } else {
       setFormError('')
       alert('Séance ajoutée!')
@@ -92,7 +92,7 @@ export default function DashboardTuteur() {
       </h2>
       <p className="text-lg mb-6">Voici votre horaire de tutorat :</p>
 
-      {formError && <div className="mb-4 text-red-600 font-semibold">{formError}</div>}
+      {formError && <pre className="mb-4 text-red-600 font-semibold whitespace-pre-wrap">{formError}</pre>}
 
       <form onSubmit={handleSubmit} className="mb-6 space-y-4 bg-gray-50 p-4 rounded-lg">
         <div className="grid grid-cols-2 gap-4">
