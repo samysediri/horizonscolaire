@@ -9,9 +9,6 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZia2d2bXlucGlwcmRlcnpidWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4Mzk2MDAsImV4cCI6MjA1ODQxNTYwMH0.AR2R5f-VFxE0RwHZDQyUuVB3hmcSZBPu8AxkxC1beg0'
 )
 
-const LESSONSPACE_API_KEY = 'cdee0709-2ffe-4758-a0b9-25f92f91c0a7'
-const LESSONSPACE_API_URL = 'https://api.thelessonspace.com/v2/recordings/'
-
 export default function DashboardTuteur() {
   const [prenom, setPrenom] = useState('')
   const [userId, setUserId] = useState('')
@@ -67,11 +64,7 @@ export default function DashboardTuteur() {
               if (!s.lien_revoir && s.lien_lessonspace) {
                 const spaceId = s.lien_lessonspace.split('/').pop().split('?')[0]
                 try {
-                  const response = await fetch(`${LESSONSPACE_API_URL}${spaceId}`, {
-                    headers: {
-                      Authorization: `Bearer ${LESSONSPACE_API_KEY}`
-                    }
-                  })
+                  const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
                   const json = await response.json()
 
                   if (!json.recording_url) {
@@ -90,7 +83,7 @@ export default function DashboardTuteur() {
                     return { ...s, lien_revoir: lienRevoir }
                   }
                 } catch (error) {
-                  setMessage("Erreur API Lessonspace : " + error.message)
+                  setMessage("Erreur API intermédiaire : " + error.message)
                   console.error('Erreur lors de la récupération de l’enregistrement :', error)
                 }
               }
