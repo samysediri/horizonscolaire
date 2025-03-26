@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     service: 'gmail',
     auth: {
       user: 'TON_EMAIL@gmail.com',
-      pass: 'TON_MOT_DE_PASSE_OU_APP_PASSWORD',
+      pass: 'TON_APP_PASSWORD', // généré via https://myaccount.google.com/apppasswords
     },
   });
 
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Erreur lors de l’envoi de l’email:', error);
+    console.error('Erreur d’envoi :', error);
     return res.status(500).json({ error: 'Échec de l’envoi de l’email' });
   }
 }
