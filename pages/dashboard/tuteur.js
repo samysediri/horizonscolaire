@@ -18,7 +18,7 @@ export default function DashboardTuteur() {
   const [message, setMessage] = useState('Chargement en cours...')
   const [seances, setSeances] = useState([])
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
-  const [newSeance, setNewSeance] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '' })
+  const [newSeance, setNewSeance] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '', recurrence: 1 })
 
   useEffect(() => {
     const fetchUserAndSeances = async () => {
@@ -121,15 +121,30 @@ export default function DashboardTuteur() {
   }
 
   const handleAddSeance = async () => {
-    if (!newSeance.eleve_nom || !newSeance.date || !newSeance.heure || !newSeance.duree) {
+    const { eleve_nom, date, heure, duree, lien_lessonspace, recurrence } = newSeance
+    if (!eleve_nom || !date || !heure || !duree || recurrence < 1) {
       alert("Veuillez remplir tous les champs.")
       return
     }
-    const { error } = await supabase.from('seances').insert([{ ...newSeance, tuteur_id: userId }])
+
+    const dates = Array.from({ length: recurrence }, (_, i) =>
+      format(addDays(new Date(date), 7 * i), 'yyyy-MM-dd')
+    )
+
+    const seancesToAdd = dates.map(d => ({
+      eleve_nom,
+      date: d,
+      heure,
+      duree,
+      lien_lessonspace,
+      tuteur_id: userId
+    }))
+
+    const { error } = await supabase.from('seances').insert(seancesToAdd)
     if (error) {
-      alert("Erreur lors de la création de la séance")
+      alert("Erreur lors de la création des séances")
     } else {
-      alert("Séance ajoutée!")
+      alert("Séances ajoutées!")
       window.location.reload()
     }
   }
@@ -171,19 +186,19 @@ export default function DashboardTuteur() {
         {prenom ? `Bienvenue, ${prenom}!` : message}
       </h2>
       <div className="mb-8 bg-white shadow p-4 rounded-lg">
-        <h3 className="text-xl font-semibold mb-4">Ajouter une séance</h3>
-        <div className="grid grid-cols-5 gap-3 mb-3">
+        <h3 className="text-xl font-semibold mb-4">Ajouter une ou plusieurs séances</h3>
+        <div className="grid grid-cols-6 gap-3 mb-3">
           <input type="text" placeholder="Élève" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, eleve_nom: e.target.value })} />
           <input type="date" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, date: e.target.value })} />
           <input type="time" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, heure: e.target.value })} />
           <input type="number" placeholder="Durée" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, duree: e.target.value })} />
           <input type="text" placeholder="Lien Lessonspace" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, lien_lessonspace: e.target.value })} />
+          <input type="number" placeholder="# de semaines" className="border rounded p-2" onChange={e => setNewSeance({ ...newSeance, recurrence: parseInt(e.target.value) })} />
         </div>
-        <button onClick={handleAddSeance} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Ajouter la séance</button>
+        <button onClick={handleAddSeance} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Ajouter les séances</button>
       </div>
       <p className="text-xl font-medium mb-4">Votre horaire hebdomadaire</p>
       {renderSchedule()}
     </div>
   )
 }
-
