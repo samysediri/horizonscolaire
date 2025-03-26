@@ -73,6 +73,11 @@ export default function DashboardTuteur() {
                     }
                   })
                   const json = await response.json()
+
+                  if (!json.recording_url) {
+                    console.warn("Aucun enregistrement pour", spaceId, json)
+                  }
+
                   const lienRevoir = json.recording_url || null
 
                   if (lienRevoir) {
@@ -86,6 +91,7 @@ export default function DashboardTuteur() {
                     }
                   }
                 } catch (error) {
+                  setMessage("Erreur API Lessonspace : " + error.message)
                   console.error('Erreur lors de la récupération de l’enregistrement :', error)
                 }
               }
