@@ -1,6 +1,4 @@
-Voici le contenu à copier dans ton fichier `package.json` sur GitHub :
 
-```json
 {
   "name": "horizon-scolaire",
   "version": "1.0.0",
@@ -18,15 +16,4 @@ Voici le contenu à copier dans ton fichier `package.json` sur GitHub :
     "nodemailer": "^6.9.8"
   }
 }
-```
 
-### Étapes :
-1. Va sur [https://github.com/samysediri/horizonscolaire](https://github.com/samysediri/horizonscolaire)
-2. Clique sur le fichier `package.json`
-3. Clique sur le bouton crayon ✏️ en haut à droite pour l’éditer
-4. Remplace tout le contenu par ce que je t’ai donné ci-dessus
-5. Descends et clique sur **“Commit changes”**
-
-🟢 Une fois que c’est fait, Vercel devrait redéployer automatiquement et reconnaître `nodemailer` correctement.
-
-Tu veux que je surveille le déploiement avec toi? 😄
