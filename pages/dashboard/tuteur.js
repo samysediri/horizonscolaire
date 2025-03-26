@@ -76,19 +76,18 @@ export default function DashboardTuteur() {
 
                   if (!json.recording_url) {
                     console.warn("Aucun enregistrement pour", spaceId, json)
+                    s.lien_revoir = 'non_disponible'
+                    return s
                   }
 
-                  const lienRevoir = json.recording_url || null
+                  const lienRevoir = json.recording_url
+                  const { error } = await supabase
+                    .from('seances')
+                    .update({ lien_revoir: lienRevoir })
+                    .eq('id', s.id)
 
-                  if (lienRevoir) {
-                    const { error } = await supabase
-                      .from('seances')
-                      .update({ lien_revoir: lienRevoir })
-                      .eq('id', s.id)
-
-                    if (!error) {
-                      return { ...s, lien_revoir: lienRevoir }
-                    }
+                  if (!error) {
+                    return { ...s, lien_revoir: lienRevoir }
                   }
                 } catch (error) {
                   setMessage("Erreur API Lessonspace : " + error.message)
@@ -176,7 +175,8 @@ export default function DashboardTuteur() {
                   <div className="flex flex-col gap-1 mt-2">
                     <a href={s.lien_lessonspace} target="_blank" className="text-sm text-blue-600 hover:underline">Accéder</a>
                     <button onClick={() => handleCompleter(s.id)} className="text-sm text-green-600 hover:underline">Compléter</button>
-                    {s.lien_revoir && <a href={s.lien_revoir} target="_blank" className="text-sm text-purple-600 hover:underline">Revoir</a>}
+                    {s.lien_revoir === 'non_disponible' && <p className="text-sm text-gray-500 italic">Pas encore disponible</p>}
+                    {s.lien_revoir && s.lien_revoir !== 'non_disponible' && <a href={s.lien_revoir} target="_blank" className="text-sm text-purple-600 hover:underline">Revoir</a>}
                   </div>
                 </div>
               ))}
