@@ -32,7 +32,6 @@ export async function GET(req) {
       headers: { 'Content-Type': 'application/json' }
     })
   } catch (error) {
-    console.error("Erreur API Lessonspace:", error)
     return new Response(JSON.stringify({ error: 'Erreur serveur : ' + error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
