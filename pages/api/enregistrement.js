@@ -24,6 +24,8 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     const allRecordings = data.results || [];
+    
+console.log("Résultat complet des enregistrements:", data);
 
     const matchingRecording = allRecordings.find(recording =>
       recording.space_url.includes(spaceId)
