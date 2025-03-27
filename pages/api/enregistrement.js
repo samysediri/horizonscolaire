@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   try {
     const response = await fetch(`https://api.thelessonspace.com/v2/recordings/${spaceId}`, {
       headers: {
-        Authorization: `Bearer cdee0709-2ffe-4758-a0b9-25f92f91c0a7`, // remplace si besoin
+        Authorization: `Bearer cdee0709-2ffe-4758-a0b9-25f92f91c0a7`,
         'Content-Type': 'application/json',
       },
     });
