@@ -38,7 +38,7 @@ export default function DashboardTuteur() {
           .maybeSingle()
 
         if (!profile || profileError) {
-          setMessage("Profil non trouvé. Vérifie la table 'profiles' pour l'ID suivant :")
+          setMessage("Profil non trouvé. Vérifie la table 'profiles'")
           return
         }
 
@@ -59,39 +59,7 @@ export default function DashboardTuteur() {
         if (seanceError) {
           setMessage("Erreur lors du chargement des séances : " + seanceError.message)
         } else {
-          const updatedSeances = await Promise.all(
-            seanceData.map(async (s) => {
-              if (!s.lien_revoir && s.lien_lessonspace) {
-                const spaceId = s.lien_lessonspace.split('/').pop().split('?')[0]
-                try {
-                  const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
-                  const json = await response.json()
-
-                  console.log("Résultat API enregistrement pour", spaceId, json)
-
-                  if (!json.recording_url) {
-                    s.lien_revoir = 'non_disponible'
-                    return s
-                  }
-
-                  const lienRevoir = json.recording_url
-                  const { error } = await supabase
-                    .from('seances')
-                    .update({ lien_revoir: lienRevoir })
-                    .eq('id', s.id)
-
-                  if (!error) {
-                    return { ...s, lien_revoir: lienRevoir }
-                  }
-                } catch (error) {
-                  setMessage("Erreur API intermédiaire : " + error.message)
-                }
-              }
-              return s
-            })
-          )
-
-          setSeances(updatedSeances)
+          setSeances(seanceData)
         }
       }
     }
@@ -102,7 +70,6 @@ export default function DashboardTuteur() {
   const prevWeek = () => setCurrentWeekStart(addDays(currentWeekStart, -7))
 
   const handleCompleter = async (seanceId) => {
-    console.log(">>> COMPLETER déclenché pour :", seanceId)
     const duree = prompt("Entrez la durée réelle de la séance (en minutes) :")
     if (!duree) return
 
@@ -115,6 +82,21 @@ export default function DashboardTuteur() {
       alert("Erreur lors de la mise à jour de la séance")
     } else {
       alert("Séance complétée avec succès!")
+      window.location.reload()
+    }
+  }
+
+  const handleDelete = async (seanceId) => {
+    if (!confirm("Es-tu sûr de vouloir supprimer cette séance?")) return
+    const { error } = await supabase
+      .from('seances')
+      .delete()
+      .eq('id', seanceId)
+
+    if (error) {
+      alert("Erreur lors de la suppression.")
+    } else {
+      alert("Séance supprimée.")
       window.location.reload()
     }
   }
@@ -169,6 +151,7 @@ export default function DashboardTuteur() {
                   <div className="flex flex-col gap-1 mt-2">
                     <a href={s.lien_lessonspace} target="_blank" className="text-sm text-blue-600 hover:underline">Accéder</a>
                     <button onClick={() => handleCompleter(s.id)} className="text-sm text-green-600 hover:underline">Compléter</button>
+                    <button onClick={() => handleDelete(s.id)} className="text-sm text-red-600 hover:underline">Supprimer</button>
                     {s.lien_revoir === 'non_disponible' && <p className="text-sm text-gray-500 italic">Pas encore disponible</p>}
                     {s.lien_revoir && s.lien_revoir !== 'non_disponible' && <a href={s.lien_revoir} target="_blank" className="text-sm text-purple-600 hover:underline">Revoir</a>}
                   </div>
