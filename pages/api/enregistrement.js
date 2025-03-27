@@ -37,7 +37,12 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: data })
     }
 
-    return res.status(200).json(data)
+    // 🔥 Si l’enregistrement est disponible, retourne uniquement l’URL
+    if (data.recording_url) {
+      return res.status(200).json({ recording_url: data.recording_url })
+    }
+
+    return res.status(200).json({ message: "Aucun enregistrement disponible", data })
   } catch (error) {
     console.error('Erreur fetch API:', error)
     return res.status(500).json({ error: error.message })
