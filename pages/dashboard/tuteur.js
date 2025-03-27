@@ -67,8 +67,9 @@ export default function DashboardTuteur() {
                   const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
                   const json = await response.json()
 
+                  console.log("Résultat API enregistrement pour", spaceId, json)
+
                   if (!json.recording_url) {
-                    console.warn("Aucun enregistrement pour", spaceId, json)
                     s.lien_revoir = 'non_disponible'
                     return s
                   }
@@ -84,7 +85,6 @@ export default function DashboardTuteur() {
                   }
                 } catch (error) {
                   setMessage("Erreur API intermédiaire : " + error.message)
-                  console.error('Erreur lors de la récupération de l’enregistrement :', error)
                 }
               }
               return s
@@ -102,6 +102,7 @@ export default function DashboardTuteur() {
   const prevWeek = () => setCurrentWeekStart(addDays(currentWeekStart, -7))
 
   const handleCompleter = async (seanceId) => {
+    console.log(">>> COMPLETER déclenché pour :", seanceId)
     const duree = prompt("Entrez la durée réelle de la séance (en minutes) :")
     if (!duree) return
 
