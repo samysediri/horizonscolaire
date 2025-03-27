@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   console.log("Clé API utilisée :", apiKey)
 
   try {
-    const response = await fetch(`https://api.thelessonspace.com/v2/recordings/${spaceId}`, {
+    const response = await fetch(`https://api.thelessonspace.com/v2/spaces/${spaceId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
