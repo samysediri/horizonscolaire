@@ -2,21 +2,31 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { Calendar, momentLocalizer } from 'react-big-calendar'
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar'
 import format from 'date-fns/format'
 import parse from 'date-fns/parse'
 import startOfWeek from 'date-fns/startOfWeek'
 import getDay from 'date-fns/getDay'
 import addDays from 'date-fns/addDays'
-import endOfWeek from 'date-fns/endOfWeek'
+import fr from 'date-fns/locale/fr'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
+
+const locales = {
+  'fr': fr,
+}
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+})
 
 const supabase = createClient(
   'https://fbkgvmynpiprderzbuld.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZia2d2bXlucGlwcmRlcnpidWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4Mzk2MDAsImV4cCI6MjA1ODQxNTYwMH0.AR2R5f-VFxE0RwHZDQyUuVB3hmcSZBPu8AxkxC1beg0'
 )
-
-const localizer = momentLocalizer({ format, parse, startOfWeek, getDay })
 
 export default function DashboardTuteur() {
   const [prenom, setPrenom] = useState('')
@@ -87,7 +97,7 @@ export default function DashboardTuteur() {
 
   const handleSelectEvent = (event) => {
     const seance = event.resource
-    const action = prompt(`Action pour ${seance.eleve_nom} ? (compléter / supprimer)`).toLowerCase()
+    const action = prompt(`Action pour ${seance.eleve_nom} ? (compléter / supprimer)`)?.toLowerCase()
 
     if (action === 'compléter') {
       const duree = prompt("Durée réelle en minutes?")
