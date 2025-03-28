@@ -128,7 +128,7 @@ export default function DashboardTuteur() {
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">{prenom ? `Bienvenue, ${prenom}!` : message}</h2>
 
-      <div className="mb-4 flex gap-4">
+      <div className="mb-6 flex gap-6">
         <Link href="/dashboard/tuteur" className="text-blue-600 hover:underline">Horaire</Link>
         <Link href="/dashboard/heures" className="text-blue-600 hover:underline">Heures complétées</Link>
       </div>
@@ -179,4 +179,5 @@ export default function DashboardTuteur() {
     </div>
   )
 }
+
 
