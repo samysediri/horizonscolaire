@@ -88,16 +88,20 @@ export default function DashboardTuteur() {
 
   const handleDelete = async (seanceId) => {
     if (!confirm("Es-tu sûr de vouloir supprimer cette séance?")) return
-    const { error } = await supabase
+
+    console.log("Suppression de la séance avec ID :", seanceId)
+    const { error, data } = await supabase
       .from('seances')
       .delete()
       .eq('id', seanceId)
 
+    console.log("Résultat Supabase:", { data, error })
+
     if (error) {
-      alert("Erreur lors de la suppression.")
+      alert("Erreur lors de la suppression : " + error.message)
     } else {
+      setSeances(prev => prev.filter(s => s.id !== seanceId))
       alert("Séance supprimée.")
-      window.location.reload()
     }
   }
 
