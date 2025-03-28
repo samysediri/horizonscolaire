@@ -9,6 +9,7 @@ import startOfWeek from 'date-fns/startOfWeek'
 import getDay from 'date-fns/getDay'
 import addDays from 'date-fns/addDays'
 import fr from 'date-fns/locale/fr'
+import Link from 'next/link'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
 const locales = { 'fr': fr }
@@ -127,6 +128,11 @@ export default function DashboardTuteur() {
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">{prenom ? `Bienvenue, ${prenom}!` : message}</h2>
 
+      <div className="mb-4 flex gap-4">
+        <Link href="/dashboard/tuteur" className="text-blue-600 hover:underline">Horaire</Link>
+        <Link href="/dashboard/heures" className="text-blue-600 hover:underline">Heures complétées</Link>
+      </div>
+
       <div className="mb-6 grid grid-cols-7 gap-2">
         <input type="text" placeholder="Élève" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, eleve_nom: e.target.value })} />
         <input type="date" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, date: e.target.value })} />
@@ -173,3 +179,4 @@ export default function DashboardTuteur() {
     </div>
   )
 }
+
