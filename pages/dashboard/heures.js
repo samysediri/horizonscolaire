@@ -1,10 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns'
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar'
+import format from 'date-fns/format'
+import parse from 'date-fns/parse'
+import startOfWeek from 'date-fns/startOfWeek'
+import getDay from 'date-fns/getDay'
+import addDays from 'date-fns/addDays'
 import fr from 'date-fns/locale/fr'
-import { fr as frLocale } from 'date-fns/locale'
+import Link from 'next/link'
+import 'react-big-calendar/lib/css/react-big-calendar.css'
+
+const locales = { 'fr': fr }
+const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales })
 
 const supabase = createClient(
   'https://fbkgvmynpiprderzbuld.supabase.co',
@@ -12,67 +21,52 @@ const supabase = createClient(
 )
 
 export default function HeuresCompletees() {
+  const [prenom, setPrenom] = useState('')
   const [userId, setUserId] = useState('')
-  const [mois, setMois] = useState(new Date())
-  const [heuresParEleve, setHeuresParEleve] = useState([])
+  const [message, setMessage] = useState('Chargement en cours...')
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchUser = async () => {
       const {
         data: { user },
         error: userError
       } = await supabase.auth.getUser()
-      if (userError) return
 
-      setUserId(user.id)
+      if (userError) {
+        setMessage(userError.message)
+        return
+      }
 
-      const debut = format(startOfMonth(mois), 'yyyy-MM-dd')
-      const fin = format(endOfMonth(mois), 'yyyy-MM-dd')
+      if (user) {
+        setUserId(user.id)
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle()
 
-      const { data, error } = await supabase
-        .from('seances')
-        .select('eleve_nom, duree_reelle')
-        .eq('tuteur_id', user.id)
-        .gte('date', debut)
-        .lte('date', fin)
+        if (!profile || profileError) {
+          setMessage("Profil non trouvé. Vérifie la table 'profiles'")
+          return
+        }
 
-      if (!error && data) {
-        const heures = {}
-        data.forEach(s => {
-          if (!s.duree_reelle) return
-          if (!heures[s.eleve_nom]) heures[s.eleve_nom] = 0
-          heures[s.eleve_nom] += s.duree_reelle
-        })
-        const heuresArray = Object.entries(heures).map(([eleve, duree]) => ({ eleve, heures: (duree / 60).toFixed(2) }))
-        setHeuresParEleve(heuresArray)
+        setPrenom(profile.first_name)
+        setMessage('')
       }
     }
-    fetchData()
-  }, [mois])
+    fetchUser()
+  }, [])
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Heures complétées - {format(mois, 'MMMM yyyy', { locale: frLocale })}</h2>
-      <div className="flex gap-4 mb-4">
-        <button onClick={() => setMois(subMonths(mois, 1))} className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300">← Mois précédent</button>
-        <button onClick={() => setMois(addMonths(mois, 1))} className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300">Mois suivant →</button>
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">{prenom ? `Bienvenue, ${prenom}!` : message}</h2>
+
+      <div className="mb-6 flex gap-6">
+        <Link href="/dashboard/tuteur" className="text-blue-600 hover:underline">Horaire</Link>
+        <Link href="/dashboard/heures" className="text-blue-600 hover:underline">Heures complétées</Link>
       </div>
-      <table className="w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 border">Élève</th>
-            <th className="p-2 border">Heures complétées</th>
-          </tr>
-        </thead>
-        <tbody>
-          {heuresParEleve.map(({ eleve, heures }) => (
-            <tr key={eleve} className="text-center">
-              <td className="border p-2 font-medium">{eleve}</td>
-              <td className="border p-2">{heures} h</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <p className="text-gray-600 italic">Prochaine étape : affichage des heures complétées par mois pour chaque élève.</p>
     </div>
   )
 }
