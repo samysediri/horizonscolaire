@@ -17,7 +17,7 @@ const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales
 
 const supabase = createClient(
   'https://fbkgvmynpiprderzbuld.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZia2d2bXlucGlwcmRlcnpidWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4Mzk2MDAsImV4cCI6MjA1ODQxNTYwMH0.AR2R5f-VFxE0RwHZDQyUuVB3hmcSZBPu8AxkxC1beg0'
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
 export default function DashboardTuteur() {
@@ -66,7 +66,7 @@ export default function DashboardTuteur() {
         } else {
           const updatedSeances = await Promise.all(
             seanceData.map(async (s) => {
-              if (!s.lien_revoir && s.lien_lessonspace) {
+              if (!s.lien_revoir && s.lien_lessonspace && s.duree_reelle) {
                 const spaceId = s.lien_lessonspace.split('/').pop().split('?')[0]
                 try {
                   const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
@@ -140,6 +140,9 @@ export default function DashboardTuteur() {
     }
   }
 
+  const minHour = Math.min(...seances.map(s => parseInt(s.heure.split(':')[0]) || 6), 6)
+  const maxHour = Math.max(...seances.map(s => parseInt(s.heure.split(':')[0]) + 1 || 22), 22)
+
   const events = useMemo(() => seances.map(s => ({
     id: s.id,
     title: `${s.eleve_nom}`,
@@ -181,21 +184,31 @@ export default function DashboardTuteur() {
         onSelectEvent={handleSelectEvent}
         views={['week', 'day']}
         defaultView="week"
+        min={new Date(1970, 1, 1, minHour, 0)}
+        max={new Date(1970, 1, 1, maxHour, 0)}
       />
 
       {selectedSeance && (
         <div className="fixed bottom-6 right-6 bg-white shadow-xl border rounded-lg p-4 max-w-xs w-full z-50">
           <h4 className="font-semibold mb-2">{selectedSeance.eleve_nom}</h4>
           <div className="flex flex-col gap-2">
-            <button onClick={() => window.open(selectedSeance.lien_lessonspace, '_blank')} className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600">Accéder</button>
-            <button onClick={() => {
-              const duree = prompt("Durée réelle en minutes?")
-              if (!duree) return
-              supabase.from('seances').update({ duree_reelle: parseInt(duree) }).eq('id', selectedSeance.id).then(({ error }) => {
-                if (error) alert("Erreur lors de la mise à jour.")
-                else alert("Séance complétée!")
-              })
-            }} className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600">Compléter</button>
+            {!selectedSeance.duree_reelle && (
+              <button onClick={() => window.open(selectedSeance.lien_lessonspace, '_blank')} className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600">Accéder</button>
+            )}
+            {!selectedSeance.duree_reelle && (
+              <button onClick={() => {
+                const duree = prompt("Durée réelle en minutes?")
+                if (!duree) return
+                supabase.from('seances').update({ duree_reelle: parseInt(duree) }).eq('id', selectedSeance.id).then(({ error }) => {
+                  if (error) alert("Erreur lors de la mise à jour.")
+                  else {
+                    alert("Séance complétée!")
+                    setSeances(prev => prev.map(s => s.id === selectedSeance.id ? { ...s, duree_reelle: parseInt(duree) } : s))
+                    setSelectedSeance(null)
+                  }
+                })
+              }} className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600">Compléter</button>
+            )}
             {selectedSeance.lien_revoir && (
               <button onClick={() => window.open(selectedSeance.lien_revoir, '_blank')} className="bg-purple-500 text-white py-1 px-3 rounded hover:bg-purple-600">Revoir</button>
             )}
