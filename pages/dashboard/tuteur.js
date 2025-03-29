@@ -28,6 +28,44 @@ export default function DashboardTuteur() {
   const [selectedSeance, setSelectedSeance] = useState(null)
   const [newSeance, setNewSeance] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '', recurrence: 1, parent_email: '' })
 
+  const loadSeances = async (user_id) => {
+    const { data: seanceData, error: seanceError } = await supabase
+      .from('seances')
+      .select('*')
+      .eq('tuteur_id', user_id)
+
+    if (seanceError) {
+      setMessage("Erreur lors du chargement des séances : " + seanceError.message)
+      return
+    }
+
+    const updatedSeances = await Promise.all(
+      seanceData.map(async (s) => {
+        if (!s.lien_revoir && s.lien_lessonspace && s.duree_reelle) {
+          const spaceId = s.lien_lessonspace.split('/').pop().split('?')[0]
+          try {
+            const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
+            const json = await response.json()
+
+            if (!json.recording_url) return s
+
+            const { error } = await supabase
+              .from('seances')
+              .update({ lien_revoir: json.recording_url })
+              .eq('id', s.id)
+
+            if (!error) return { ...s, lien_revoir: json.recording_url }
+          } catch (error) {
+            console.error("Erreur lors de la récupération de l'enregistrement:", error)
+          }
+        }
+        return s
+      })
+    )
+
+    setSeances(updatedSeances)
+  }
+
   useEffect(() => {
     const fetchUserAndSeances = async () => {
       const {
@@ -55,41 +93,7 @@ export default function DashboardTuteur() {
 
         setPrenom(profile.first_name)
         setMessage('')
-
-        const { data: seanceData, error: seanceError } = await supabase
-          .from('seances')
-          .select('*')
-          .eq('tuteur_id', user.id)
-
-        if (seanceError) {
-          setMessage("Erreur lors du chargement des séances : " + seanceError.message)
-        } else {
-          const updatedSeances = await Promise.all(
-            seanceData.map(async (s) => {
-              if (!s.lien_revoir && s.lien_lessonspace && s.duree_reelle) {
-                const spaceId = s.lien_lessonspace.split('/').pop().split('?')[0]
-                try {
-                  const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
-                  const json = await response.json()
-
-                  if (!json.recording_url) return s
-
-                  const { error } = await supabase
-                    .from('seances')
-                    .update({ lien_revoir: json.recording_url })
-                    .eq('id', s.id)
-
-                  if (!error) return { ...s, lien_revoir: json.recording_url }
-                } catch (error) {
-                  console.error("Erreur lors de la récupération de l'enregistrement:", error)
-                }
-              }
-              return s
-            })
-          )
-
-          setSeances(updatedSeances)
-        }
+        await loadSeances(user.id)
       }
     }
     fetchUserAndSeances()
@@ -101,13 +105,7 @@ export default function DashboardTuteur() {
     if (error) {
       alert("Erreur lors de la suppression.")
     } else {
-      const { data: refreshedSeances, error: fetchError } = await supabase
-        .from('seances')
-        .select('*')
-        .eq('tuteur_id', userId)
-      if (!fetchError) {
-        setSeances(refreshedSeances)
-      }
+      await loadSeances(userId)
       setSelectedSeance(null)
     }
   }
@@ -138,7 +136,7 @@ export default function DashboardTuteur() {
       alert("Erreur lors de la création des séances")
     } else {
       alert("Séances ajoutées!")
-      window.location.reload()
+      await loadSeances(userId)
     }
   }
 
