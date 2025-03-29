@@ -28,6 +28,25 @@ export default function DashboardTuteur() {
   const [selectedSeance, setSelectedSeance] = useState(null)
   const [newSeance, setNewSeance] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '', recurrence: 1, parent_email: '' })
 
+  const getRevoir = async (seance) => {
+    if (!seance.lien_lessonspace) return null
+    const spaceId = seance.lien_lessonspace.split('/').pop().split('?')[0]
+    try {
+      const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
+      const json = await response.json()
+      console.log("Forçage lien revoir:", json)
+      if (json.recording_url) {
+        const { error } = await supabase.from('seances').update({ lien_revoir: json.recording_url }).eq('id', seance.id)
+        if (!error) await loadSeances(userId)
+      } else {
+        alert("Aucun enregistrement trouvé.")
+      }
+    } catch (e) {
+      console.error("Erreur en tentant de récupérer le lien revoir:", e)
+      alert("Erreur API Lessonspace")
+    }
+  }
+
   const loadSeances = async (user_id) => {
     const { data: seanceData, error: seanceError } = await supabase
       .from('seances')
@@ -39,32 +58,7 @@ export default function DashboardTuteur() {
       return
     }
 
-    const updatedSeances = await Promise.all(
-      seanceData.map(async (s) => {
-        if (!s.lien_revoir && s.lien_lessonspace && s.duree_reelle) {
-          const spaceId = s.lien_lessonspace.split('/').pop().split('?')[0]
-          try {
-            const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
-            const json = await response.json()
-            console.log("Résultat API Lessonspace:", json)
-
-            if (!json.recording_url) return s
-
-            const { error } = await supabase
-              .from('seances')
-              .update({ lien_revoir: json.recording_url })
-              .eq('id', s.id)
-
-            if (!error) return { ...s, lien_revoir: json.recording_url }
-          } catch (error) {
-            console.error("Erreur lors de la récupération de l'enregistrement:", error)
-          }
-        }
-        return s
-      })
-    )
-
-    setSeances(updatedSeances)
+    setSeances(seanceData)
   }
 
   useEffect(() => {
@@ -212,6 +206,9 @@ export default function DashboardTuteur() {
             {selectedSeance.lien_revoir && (
               <button onClick={() => window.open(selectedSeance.lien_revoir, '_blank')} className="bg-purple-500 text-white py-1 px-3 rounded hover:bg-purple-600">Revoir</button>
             )}
+            {!selectedSeance.lien_revoir && selectedSeance.duree_reelle && (
+              <button onClick={() => getRevoir(selectedSeance)} className="bg-yellow-500 text-white py-1 px-3 rounded hover:bg-yellow-600">Forcer Revoir</button>
+            )}
             <button onClick={() => handleDelete(selectedSeance.id)} className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">Supprimer</button>
             <button onClick={() => setSelectedSeance(null)} className="text-gray-500 hover:underline mt-2 text-sm">Fermer</button>
           </div>
@@ -220,3 +217,4 @@ export default function DashboardTuteur() {
     </div>
   )
 }
+
