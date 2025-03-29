@@ -26,41 +26,12 @@ export default function DashboardTuteur() {
   const [message, setMessage] = useState('Chargement en cours...')
   const [seances, setSeances] = useState([])
   const [selectedSeance, setSelectedSeance] = useState(null)
-  const [newSeance, setNewSeance] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '', recurrence: 1, parent_email: '' })
-
-  const getRevoir = async (seance) => {
-    if (!seance.space_id) return null
-    try {
-      const response = await fetch(`/api/enregistrement?spaceId=${seance.space_id}`)
-      const json = await response.json()
-      if (json.recording_url) {
-        const { error } = await supabase.from('seances').update({ lien_revoir: json.recording_url }).eq('id', seance.id)
-        if (!error) await loadSeances(userId)
-      } else {
-        alert("Aucun enregistrement trouvé.")
-      }
-    } catch (e) {
-      console.error("Erreur en tentant de récupérer le lien revoir:", e)
-      alert("Erreur API Lessonspace")
-    }
-  }
-
-  const loadSeances = async (user_id) => {
-    const { data: seanceData, error: seanceError } = await supabase
-      .from('seances')
-      .select('*')
-      .eq('tuteur_id', user_id)
-
-    if (seanceError) {
-      setMessage("Erreur lors du chargement des séances : " + seanceError.message)
-      return
-    }
-
-    setSeances(seanceData)
-  }
+  const [eleves, setEleves] = useState([])
+  const [selectedEleveId, setSelectedEleveId] = useState('')
+  const [newSeance, setNewSeance] = useState({ date: '', heure: '', duree: '', recurrence: 1 })
 
   useEffect(() => {
-    const fetchUserAndSeances = async () => {
+    const fetchUserAndData = async () => {
       const {
         data: { user },
         error: userError
@@ -86,10 +57,31 @@ export default function DashboardTuteur() {
 
         setPrenom(profile.first_name)
         setMessage('')
-        await loadSeances(user.id)
+
+        const { data: seanceData, error: seanceError } = await supabase
+          .from('seances')
+          .select('*')
+          .eq('tuteur_id', user.id)
+
+        if (seanceError) {
+          setMessage("Erreur lors du chargement des séances : " + seanceError.message)
+        } else {
+          setSeances(seanceData)
+        }
+
+        const { data: eleveData, error: eleveError } = await supabase
+          .from('eleves')
+          .select('*')
+          .eq('tuteur_id', user.id)
+
+        if (eleveError) {
+          console.error("Erreur chargement des élèves", eleveError)
+        } else {
+          setEleves(eleveData)
+        }
       }
     }
-    fetchUserAndSeances()
+    fetchUserAndData()
   }, [])
 
   const handleDelete = async (seanceId) => {
@@ -98,34 +90,34 @@ export default function DashboardTuteur() {
     if (error) {
       alert("Erreur lors de la suppression.")
     } else {
-      await loadSeances(userId)
+      setSeances(prev => prev.filter(s => s.id !== seanceId))
       setSelectedSeance(null)
     }
   }
 
   const handleAddSeance = async () => {
-    const { eleve_nom, date, heure, duree, lien_lessonspace, recurrence, parent_email } = newSeance
-    if (!eleve_nom || !date || !heure || !duree || recurrence < 1) {
+    if (!selectedEleveId || !newSeance.date || !newSeance.heure || !newSeance.duree || newSeance.recurrence < 1) {
       alert("Veuillez remplir tous les champs.")
       return
     }
 
-    const space_id = lien_lessonspace?.includes('/space/')
-      ? lien_lessonspace.split('/space/')[1].split('?')[0]
-      : null
+    const eleve = eleves.find(e => e.id === selectedEleveId)
+    if (!eleve) {
+      alert("Élève introuvable")
+      return
+    }
 
-    const dates = Array.from({ length: recurrence }, (_, i) =>
-      format(addDays(new Date(date), 7 * i), 'yyyy-MM-dd')
+    const dates = Array.from({ length: newSeance.recurrence }, (_, i) =>
+      format(addDays(new Date(newSeance.date), 7 * i), 'yyyy-MM-dd')
     )
 
     const seancesToAdd = dates.map(d => ({
-      eleve_nom,
+      eleve_nom: `${eleve.prenom} ${eleve.nom}`,
       date: d,
-      heure,
-      duree,
-      lien_lessonspace,
-      space_id,
-      parent_email,
+      heure: newSeance.heure,
+      duree: newSeance.duree,
+      lien_lessonspace: eleve.lien_lessonspace,
+      parent_email: eleve.parent_email,
       tuteur_id: userId
     }))
 
@@ -134,12 +126,9 @@ export default function DashboardTuteur() {
       alert("Erreur lors de la création des séances")
     } else {
       alert("Séances ajoutées!")
-      await loadSeances(userId)
+      window.location.reload()
     }
   }
-
-  const minHour = Math.min(...seances.map(s => parseInt(s.heure?.split(':')[0]) || 6), 6)
-  const maxHour = Math.max(...seances.map(s => parseInt(s.heure?.split(':')[0]) + 1 || 22), 22)
 
   const events = useMemo(() => seances.map(s => ({
     id: s.id,
@@ -162,15 +151,19 @@ export default function DashboardTuteur() {
         <Link href="/dashboard/heures" className="text-blue-600 hover:underline">Heures complétées</Link>
       </div>
 
-      <div className="mb-6 grid grid-cols-7 gap-2">
-        <input type="text" placeholder="Élève" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, eleve_nom: e.target.value })} />
+      <div className="mb-6 grid grid-cols-5 gap-2">
+        <select className="border rounded p-2 col-span-2" onChange={e => setSelectedEleveId(e.target.value)}>
+          <option value="">Sélectionner un élève</option>
+          {eleves.map(e => (
+            <option key={e.id} value={e.id}>{e.prenom} {e.nom}</option>
+          ))}
+        </select>
         <input type="date" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, date: e.target.value })} />
         <input type="time" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, heure: e.target.value })} />
         <input type="number" placeholder="Durée" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, duree: e.target.value })} />
-        <input type="text" placeholder="Lien Lessonspace" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, lien_lessonspace: e.target.value })} />
         <input type="number" placeholder="# de semaines" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, recurrence: parseInt(e.target.value) })} />
-        <input type="email" placeholder="Courriel parent" className="border rounded p-2 col-span-1" onChange={e => setNewSeance({ ...newSeance, parent_email: e.target.value })} />
       </div>
+
       <button onClick={handleAddSeance} className="mb-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Ajouter les séances</button>
 
       <Calendar
@@ -182,35 +175,27 @@ export default function DashboardTuteur() {
         onSelectEvent={handleSelectEvent}
         views={['week', 'day']}
         defaultView="week"
-        min={new Date(1970, 1, 1, minHour, 0)}
-        max={new Date(1970, 1, 1, maxHour, 0)}
       />
 
       {selectedSeance && (
         <div className="fixed bottom-6 right-6 bg-white shadow-xl border rounded-lg p-4 max-w-xs w-full z-50">
           <h4 className="font-semibold mb-2">{selectedSeance.eleve_nom}</h4>
           <div className="flex flex-col gap-2">
-            {!selectedSeance.duree_reelle && (
+            {selectedSeance.lien_lessonspace && !selectedSeance.duree_reelle && (
               <button onClick={() => window.open(selectedSeance.lien_lessonspace, '_blank')} className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600">Accéder</button>
             )}
             {!selectedSeance.duree_reelle && (
-              <button onClick={async () => {
+              <button onClick={() => {
                 const duree = prompt("Durée réelle en minutes?")
                 if (!duree) return
-                const { error } = await supabase.from('seances').update({ duree_reelle: parseInt(duree) }).eq('id', selectedSeance.id)
-                if (error) alert("Erreur lors de la mise à jour.")
-                else {
-                  alert("Séance complétée!")
-                  await loadSeances(userId)
-                  setSelectedSeance(null)
-                }
+                supabase.from('seances').update({ duree_reelle: parseInt(duree) }).eq('id', selectedSeance.id).then(({ error }) => {
+                  if (error) alert("Erreur lors de la mise à jour.")
+                  else alert("Séance complétée!")
+                })
               }} className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600">Compléter</button>
             )}
             {selectedSeance.lien_revoir && (
               <button onClick={() => window.open(selectedSeance.lien_revoir, '_blank')} className="bg-purple-500 text-white py-1 px-3 rounded hover:bg-purple-600">Revoir</button>
-            )}
-            {!selectedSeance.lien_revoir && selectedSeance.duree_reelle && (
-              <button onClick={() => getRevoir(selectedSeance)} className="bg-yellow-500 text-white py-1 px-3 rounded hover:bg-yellow-600">Forcer Revoir</button>
             )}
             <button onClick={() => handleDelete(selectedSeance.id)} className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">Supprimer</button>
             <button onClick={() => setSelectedSeance(null)} className="text-gray-500 hover:underline mt-2 text-sm">Fermer</button>
