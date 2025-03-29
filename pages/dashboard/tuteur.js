@@ -29,12 +29,10 @@ export default function DashboardTuteur() {
   const [newSeance, setNewSeance] = useState({ eleve_nom: '', date: '', heure: '', duree: '', lien_lessonspace: '', recurrence: 1, parent_email: '' })
 
   const getRevoir = async (seance) => {
-    if (!seance.lien_lessonspace) return null
-    const spaceId = seance.lien_lessonspace.split('/').pop().split('?')[0]
+    if (!seance.space_id) return null
     try {
-      const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
+      const response = await fetch(`/api/enregistrement?spaceId=${seance.space_id}`)
       const json = await response.json()
-      console.log("Forçage lien revoir:", json)
       if (json.recording_url) {
         const { error } = await supabase.from('seances').update({ lien_revoir: json.recording_url }).eq('id', seance.id)
         if (!error) await loadSeances(userId)
@@ -112,6 +110,10 @@ export default function DashboardTuteur() {
       return
     }
 
+    const space_id = lien_lessonspace?.includes('/space/')
+      ? lien_lessonspace.split('/space/')[1].split('?')[0]
+      : null
+
     const dates = Array.from({ length: recurrence }, (_, i) =>
       format(addDays(new Date(date), 7 * i), 'yyyy-MM-dd')
     )
@@ -122,6 +124,7 @@ export default function DashboardTuteur() {
       heure,
       duree,
       lien_lessonspace,
+      space_id,
       parent_email,
       tuteur_id: userId
     }))
@@ -217,4 +220,3 @@ export default function DashboardTuteur() {
     </div>
   )
 }
-
