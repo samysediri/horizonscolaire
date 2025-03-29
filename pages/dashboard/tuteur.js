@@ -16,7 +16,7 @@ const locales = { 'fr': fr }
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales })
 
 const supabase = createClient(
-  'https://fbkgvmynpiprderzbuld.supabase.co',
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
