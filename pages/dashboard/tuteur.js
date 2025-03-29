@@ -196,17 +196,16 @@ export default function DashboardTuteur() {
               <button onClick={() => window.open(selectedSeance.lien_lessonspace, '_blank')} className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600">Accéder</button>
             )}
             {!selectedSeance.duree_reelle && (
-              <button onClick={() => {
+              <button onClick={async () => {
                 const duree = prompt("Durée réelle en minutes?")
                 if (!duree) return
-                supabase.from('seances').update({ duree_reelle: parseInt(duree) }).eq('id', selectedSeance.id).then(({ error }) => {
-                  if (error) alert("Erreur lors de la mise à jour.")
-                  else {
-                    alert("Séance complétée!")
-                    setSeances(prev => prev.map(s => s.id === selectedSeance.id ? { ...s, duree_reelle: parseInt(duree) } : s))
-                    setSelectedSeance(null)
-                  }
-                })
+                const { error } = await supabase.from('seances').update({ duree_reelle: parseInt(duree) }).eq('id', selectedSeance.id)
+                if (error) alert("Erreur lors de la mise à jour.")
+                else {
+                  alert("Séance complétée!")
+                  await loadSeances(userId)
+                  setSelectedSeance(null)
+                }
               }} className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600">Compléter</button>
             )}
             {selectedSeance.lien_revoir && (
