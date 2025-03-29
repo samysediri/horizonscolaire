@@ -46,6 +46,7 @@ export default function DashboardTuteur() {
           try {
             const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
             const json = await response.json()
+            console.log("Résultat API Lessonspace:", json)
 
             if (!json.recording_url) return s
 
