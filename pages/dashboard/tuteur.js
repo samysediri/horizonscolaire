@@ -64,7 +64,35 @@ export default function DashboardTuteur() {
         if (seanceError) {
           setMessage("Erreur lors du chargement des séances : " + seanceError.message)
         } else {
-          setSeances(seanceData)
+          const updatedSeances = await Promise.all(
+            seanceData.map(async (s) => {
+              if (!s.lien_revoir && s.lien_lessonspace) {
+                const spaceId = s.lien_lessonspace.split('/').pop().split('?')[0]
+                try {
+                  const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
+                  const json = await response.json()
+
+                  if (!json.recording_url) {
+                    return s
+                  }
+
+                  const { error } = await supabase
+                    .from('seances')
+                    .update({ lien_revoir: json.recording_url })
+                    .eq('id', s.id)
+
+                  if (!error) {
+                    return { ...s, lien_revoir: json.recording_url }
+                  }
+                } catch (error) {
+                  console.error("Erreur lors de la récupération de l'enregistrement:", error)
+                }
+              }
+              return s
+            })
+          )
+
+          setSeances(updatedSeances)
         }
       }
     }
@@ -179,5 +207,3 @@ export default function DashboardTuteur() {
     </div>
   )
 }
-
-
