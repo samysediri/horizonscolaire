@@ -101,7 +101,13 @@ export default function DashboardTuteur() {
     if (error) {
       alert("Erreur lors de la suppression.")
     } else {
-      setSeances(prev => prev.filter(s => s.id !== seanceId))
+      const { data: refreshedSeances, error: fetchError } = await supabase
+        .from('seances')
+        .select('*')
+        .eq('tuteur_id', userId)
+      if (!fetchError) {
+        setSeances(refreshedSeances)
+      }
       setSelectedSeance(null)
     }
   }
