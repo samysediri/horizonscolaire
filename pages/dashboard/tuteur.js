@@ -72,18 +72,14 @@ export default function DashboardTuteur() {
                   const response = await fetch(`/api/enregistrement?spaceId=${spaceId}`)
                   const json = await response.json()
 
-                  if (!json.recording_url) {
-                    return s
-                  }
+                  if (!json.recording_url) return s
 
                   const { error } = await supabase
                     .from('seances')
                     .update({ lien_revoir: json.recording_url })
                     .eq('id', s.id)
 
-                  if (!error) {
-                    return { ...s, lien_revoir: json.recording_url }
-                  }
+                  if (!error) return { ...s, lien_revoir: json.recording_url }
                 } catch (error) {
                   console.error("Erreur lors de la récupération de l'enregistrement:", error)
                 }
@@ -140,8 +136,8 @@ export default function DashboardTuteur() {
     }
   }
 
-  const minHour = Math.min(...seances.map(s => parseInt(s.heure.split(':')[0]) || 6), 6)
-  const maxHour = Math.max(...seances.map(s => parseInt(s.heure.split(':')[0]) + 1 || 22), 22)
+  const minHour = Math.min(...seances.map(s => parseInt(s.heure?.split(':')[0]) || 6), 6)
+  const maxHour = Math.max(...seances.map(s => parseInt(s.heure?.split(':')[0]) + 1 || 22), 22)
 
   const events = useMemo(() => seances.map(s => ({
     id: s.id,
